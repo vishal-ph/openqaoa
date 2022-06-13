@@ -232,7 +232,7 @@ class QAOAQiskitBackendStatevecSimulator(QAOABaseBackendStatevector, QAOABaseBac
         self.qureg = QuantumRegister(self.n_qubits)
         self.qubit_layout = self.circuit_params.qureg
         
-        if self.prepend_state:
+        if isinstance(self.prepend_state, QuantumCircuit):
             assert self.n_qubits >= len(prepend_state.qubits), "Cannot attach a bigger circuit " \
                                                                 "to the QAOA routine"
 
@@ -298,8 +298,10 @@ class QAOAQiskitBackendStatevecSimulator(QAOABaseBackendStatevector, QAOABaseBac
         # self.reset_circuit()
         parametric_circuit = QuantumCircuit(self.qureg)
 
-        if self.prepend_state:
+        if isinstance(self.prepend_state,QuantumCircuit):
             parametric_circuit = parametric_circuit.compose(self.prepend_state)
+        elif isinstance(self.prepend_state, list) or isinstance(self.prepend_state, np.ndarray):
+            parametric_circuit.initialize(self.prepend_state, parametric_circuit.qubits)
         # Initial state is all |+>
         if self.init_hadamard:
             parametric_circuit.h(self.qureg)

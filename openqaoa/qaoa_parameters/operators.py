@@ -386,7 +386,8 @@ class Hamiltonian:
                  pauli_terms: List[PauliOp],
                  coeffs: List[Union[complex, int, float]],
                  constant: float,
-                 divide_into_singles_and_pairs: bool = True):
+                 divide_into_singles_and_pairs: bool = True,
+                 remap_logical_qubits: bool = True):
         """
         Parameters
         ----------
@@ -396,8 +397,10 @@ class Hamiltonian:
             Multiplicative coefficients for each Pauli term in the Hamiltonian.
         constant: `float`
             Constant term in the Hamiltonian.
-        divide_into_singles_and_pairs: `bool`, optional
-                Whether to divide the Hamiltonian into singles and pairs
+        divide_into_singles_and_pairs: `bool`
+            Whether to divide the Hamiltonian into singles and pairs
+        remap_logical_qubits: `bool`
+            Whether to remap the logical qubits from 0 to n-1 qubits.
         """
         assert len(pauli_terms) == len(coeffs), \
             "Number of Pauli terms in Hamiltonian should be same as number of coefficients"
@@ -417,9 +420,9 @@ class Hamiltonian:
 
         # Extract qubit map if necessary
         need_remapping = False
-        if physical_qureg != self.qureg:
+        if remap_logical_qubits and physical_qureg != self.qureg:
             print(f'Qubits in the specified Hamiltonian are remapped to {self.qureg}.'
-                   'Please specify the physical quantum register as a qubit layout argument in the backend')
+                  f'Please specify the physical quantum register {self.physical_qureg} as a qubit layout argument in the backend')
             need_remapping = True
             qubit_mapper = dict(zip(physical_qureg, self.qureg))
 

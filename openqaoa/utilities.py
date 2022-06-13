@@ -686,6 +686,45 @@ def plot_energy_spectrum(hamiltonian: Hamiltonian,
     return None
 
 
+def sort_counts_increasing_energy(hamiltonian: Hamiltonian,counts:dict) -> dict:
+    """
+    Return the counts dictionary with keys sorted in increasing order of their
+    configuration energy
+    
+    Parameters
+    ----------
+    hamiltonian: `Hamiltonian`
+        The cost Hamiltonian 
+    counts: `dict`
+        The measurement outcome dictionary with respective probabilities
+    """
+    sorted_dict = dict(sorted(counts.items(), 
+                       key=lambda pair: bitstring_energy(hamiltonian,pair[0])))
+    
+    return sorted_dict
+
+
+def plot_counts(counts:dict,show_xticks:bool=True,ax=None):
+    """
+    Plot a histogram graph for the measurement outcomes vs their probabilities
+    
+    Parameters
+    ----------
+    counts: `dict`
+        The counts dictionary storing the measurement outcomes
+    """
+    if ax is None:
+        fig,ax = plt.subplots(1,1,figsize=(25,5))
+        
+    ax.bar(counts.keys(),counts.values(),align='center',width=0.3)
+    ax.tick_params(axis='x',labelrotation = 80)
+    ax.set_title('Probability distribution in increasing order of energies')
+    if not show_xticks:
+        ax.set_xticks([])
+        
+    return None
+
+
 def low_energy_states(hamiltonian: Hamiltonian,
                       threshold_per: float) -> Tuple[float, list]:
     """

@@ -186,7 +186,7 @@ def _build_cost_hamiltonian(n_qubits: int,
     return ham_op
 
 
-class QAOAvectorizedBackendSimulator(QAOABaseBackendStatevector):
+class QAOAVectorizedBackendSimulator(QAOABaseBackendStatevector):
     """
     A simulator class for quantum circuits, oriented to QAOA in particular.
 
@@ -583,6 +583,7 @@ class QAOAvectorizedBackendSimulator(QAOABaseBackendStatevector):
 
             if isinstance(self.prepend_state, np.ndarray) and (np.shape(self.prepend_state) == np.shape(self.wavefn) or np.shape(self.prepend_state) == (2**self.n_qubits,)):
                 self.wavefn = self.prepend_state
+                self.wavefn = self.wavefn.reshape([2] * self.n_qubits)
             else:
                 raise ValueError('Error : Unsupported prepend_state specified (Not an ndarray, not of shape (2**n,), or not of shape (2, 2, ..., 2)).')
 

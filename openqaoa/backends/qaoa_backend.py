@@ -16,7 +16,7 @@ import numpy as np
 
 from ..backends import (QAOAQiskitQPUBackend, QAOAPyQuilQPUBackend, QAOAPyQuilWavefunctionSimulatorBackend,
                         QAOAQiskitBackendStatevecSimulator, QAOAQiskitBackendShotBasedSimulator, 
-                        QAOAvectorizedBackendSimulator)
+                        QAOAVectorizedBackendSimulator)
 
 from ..devices import DeviceBase, DeviceLocal, DevicePyquil, DeviceQiskit
 from ..qaoa_parameters.baseparams import QAOACircuitParams
@@ -26,7 +26,7 @@ DEVICE_NAME_TO_OBJECT_MAPPER = {
     'qiskit.qasm_simulator': QAOAQiskitBackendShotBasedSimulator,
     'qiskit.shot_simulator': QAOAQiskitBackendShotBasedSimulator,
     'qiskit.statevector_simulator': QAOAQiskitBackendStatevecSimulator,
-    'vectorized': QAOAvectorizedBackendSimulator,
+    'vectorized': QAOAVectorizedBackendSimulator,
     'pyquil.statevector_simulator': QAOAPyQuilWavefunctionSimulatorBackend
 }
 
@@ -45,7 +45,7 @@ def _backend_arg_mapper(backend_obj: QAOABaseBackend,
                         qubit_layout = None):
 
     BACKEND_ARGS_MAPPER = {
-        QAOAvectorizedBackendSimulator: {},
+        QAOAVectorizedBackendSimulator: {},
         QAOAQiskitBackendStatevecSimulator: {},
         QAOAPyQuilWavefunctionSimulatorBackend: {},
         QAOAQiskitBackendShotBasedSimulator: {'n_shots': n_shots,

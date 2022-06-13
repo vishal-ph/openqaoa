@@ -22,6 +22,7 @@ import scipy.spatial
 import itertools
 
 from .helper_functions import convert2serialize, check_kwargs
+from ..qaoa_parameters.operators import Hamiltonian
 
 class Encoding():
     """
@@ -100,6 +101,13 @@ class PUBO:
         self.constant = constant
         self.n = n
         self.encoding = encoding
+
+    @property
+    def hamiltonian(self):
+        """
+        Returns the Hamiltonian of the problem.
+        """
+        return Hamiltonian.classical_hamiltonian(self.terms,self.weights,self.constant)
 
 
     def asdict(self):

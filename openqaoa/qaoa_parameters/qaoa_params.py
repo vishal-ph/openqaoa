@@ -20,6 +20,7 @@ from .fourierparams import (QAOAVariationalFourierParams, QAOAVariationalFourier
                             QAOAVariationalFourierWithBiasParams)
 from .extendedparams import QAOAVariationalExtendedParams
 from .standardparams import QAOAVariationalStandardParams, QAOAVariationalStandardWithBiasParams
+from .clusteredparams import QAOAVariationalClusteredParams
 
 VARIATIONAL_PARAMS_DICT_KEYS = {'standard': ['betas', 'gammas'],
                                 'standard_w_bias': ['betas', 'gammas_singles', 'gammas_pairs'],
@@ -27,7 +28,8 @@ VARIATIONAL_PARAMS_DICT_KEYS = {'standard': ['betas', 'gammas'],
                                 'fourier': ['q', 'v', 'u'],
                                 'fourier_extended': ['q', 'v_singles', 'v_pairs', 'u_singles', 'u_pairs'],
                                 'fourier_w_bias': ['q', 'v', 'u_singles', 'u_pairs'],
-                                'annealing': ['total_annealing_time', 'schedule']}
+                                'annealing': ['total_annealing_time', 'schedule'],
+                                'clustered': ['betas', 'gammas']}
 
 PARAMS_CLASSES_MAPPER = {'standard': QAOAVariationalStandardParams,
                          'standard_w_bias': QAOAVariationalStandardWithBiasParams,
@@ -35,7 +37,8 @@ PARAMS_CLASSES_MAPPER = {'standard': QAOAVariationalStandardParams,
                          'fourier': QAOAVariationalFourierParams,
                          'fourier_extended': QAOAVariationalFourierExtendedParams,
                          'fourier_w_bias': QAOAVariationalFourierWithBiasParams,
-                         'annealing': QAOAVariationalAnnealingParams
+                         'annealing': QAOAVariationalAnnealingParams,
+                         'clustered': QAOAVariationalClusteredParams
                          }
 
 SUPPORTED_INITIALIZATION_TYPES = ['rand', 'ramp', 'custom']
@@ -67,7 +70,8 @@ def _qaoa_variational_params_args(params_type: str,
                                   u_pairs: Optional[Union[List,
                                                           np.ndarray]] = None,
                                   total_annealing_time: Optional[float] = None,
-                                  schedule: Optional[float] = None) -> Tuple[Union[List, np.ndarray]]:
+                                  schedule: Union[List, np.ndarray] = None,
+                                  max_std_dev: Optional[float] = None) -> Tuple[Union[List, np.ndarray]]:
     """
     Provided the given parameterisation type return the 
     variational parameters arguments as a tuple
@@ -91,6 +95,7 @@ def _qaoa_variational_params_args(params_type: str,
     u_pairs: ``Union[List, np.ndarray]``
     total_annealing_time: ``float``
     schedule: ``Union[List, np.ndarray]``
+    max_std_dev: ``float``
 
     Returns
     -------
@@ -103,7 +108,8 @@ def _qaoa_variational_params_args(params_type: str,
                                  'fourier': (q, v, u),
                                  'fourier_extended': (q, v_singles, v_pairs, u_singles, u_pairs),
                                  'fourier_w_bias': (q, v, u_singles, u_pairs),
-                                 'annealing': (total_annealing_time, schedule)
+                                 'annealing': (total_annealing_time, schedule),
+                                 'clustered': (max_std_dev, betas, gammas)
                                  }
     final_variational_params = VARIATIONAL_PARAMS_MAPPER[params_type.lower()]
     if init_type != 'custom':
@@ -120,6 +126,7 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
                                    linear_ramp_time: Optional[float] = None,
                                    q: Optional[int] = None,
                                    total_annealing_time: Optional[float] = None,
+                                   max_std_dev: Optional[float] = None,
                                    seed: int = None) -> QAOAVariationalBaseParams:
     """
     Create QAOA Variational Parameters of the specified type.
@@ -139,6 +146,10 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
         For example, {'betas': [0.1, 0.2, 0.3], 'gammas': [0.1, 0.2, 0.3]}
     linear_ramp_time: ``float``
         Total time for the linear ramp initialisation method for parameters.
+    max_std_dev: ``float``
+        The Maximum standard deviation to allow between Hamiltonian clusters 
+        for Clustered parameterization.
+
     Returns
     -------
         QAOAVariationalBaseParams object of the required type
@@ -146,11 +157,11 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
 
     params_type = params_type.lower()
     init_type = init_type.lower()
-    variational_params_dict.update({'q': q})
-    variational_params_dict.update(
-        {'total_annealing_time': total_annealing_time})
     variational_params_args = _qaoa_variational_params_args(params_type,
                                                             init_type,
+                                                            q=q,
+                                                            total_annealing_time = total_annealing_time,
+                                                            max_std_dev = max_std_dev,
                                                             **variational_params_dict)
 
     try:
