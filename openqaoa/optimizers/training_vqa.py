@@ -143,7 +143,6 @@ class OptimizeVQA(ABC):
         return self
 
     # def evaluate_jac(self, x):
-
     def optimize_this(self, x):
         '''
         A function wrapper to execute the circuit in the backend. This function 

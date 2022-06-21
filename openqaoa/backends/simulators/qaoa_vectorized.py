@@ -186,7 +186,7 @@ def _build_cost_hamiltonian(n_qubits: int,
     return ham_op
 
 
-class QAOAVectorizedBackendSimulator(QAOABaseBackendStatevector):
+class QAOAvectorizedBackendSimulator(QAOABaseBackendStatevector):
     """
     A simulator class for quantum circuits, oriented to QAOA in particular.
 
