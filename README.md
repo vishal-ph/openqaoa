@@ -6,9 +6,10 @@
 #
 
   [![build test](https://github.com/entropicalabs/openqaoa/actions/workflows/test.yml/badge.svg)](https://github.com/entropicalabs/openqaoa/actions/workflows/test.yml)<!-- Tests (GitHub actions) -->
-  [![License](https://img.shields.io/badge/%F0%9F%AA%AA%20license-Apache%20License%202.0-lightgrey)](LICENSE.md)<!-- License -->
-  [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)<!-- Covenant Code of conduct -->
-
+  [![Documentation Status](https://readthedocs.com/projects/entropica-labs-openqaoa/badge/?version=latest&token=bdaaa98247ceb7e8e4bbd257d664fa3cc42ab6f4588ddabbe5afa6a3d20a1008)](https://entropica-labs-openqaoa.readthedocs-hosted.com/en/latest/?badge=latest) <!-- Readthedocs -->
+   [![License](https://img.shields.io/badge/%F0%9F%AA%AA%20license-Apache%20License%202.0-lightgrey)](LICENSE.md)<!-- License -->
+ [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)<!-- Covenant Code of conduct -->
+ [![codecov](https://codecov.io/gh/entropicalabs/openqaoa/branch/dev/graph/badge.svg?token=ZXD77KM5OR)](https://codecov.io/gh/entropicalabs/openqaoa) <!-- Code coverage -->
 </div>
 
 # OpenQAOA
@@ -66,7 +67,7 @@ from openqaoa.problems.problem import MinimumVertexCover
 import networkx
 g = networkx.circulant_graph(6, [1])
 vc = MinimumVertexCover(g, field =1.0, penalty=10)
-pubo_problem = vc.get_pubo_problem()
+qubo_problem = vc.get_qubo_problem()
 ```
 
 Where [networkx](https://networkx.org/) is an open source Python package that can easily, among other things, create graphs.
@@ -74,16 +75,16 @@ Where [networkx](https://networkx.org/) is an open source Python package that ca
 ```python
 from openqaoa.workflows.optimizer import QAOA  
 q = QAOA()
-q.compile(pubo_problem)
+q.compile(qubo_problem)
 q.optimize()
 ```
 
 Once the binary problem is defined, the simplest workflow can be defined as
 
-```  
+```python
 from openqaoa.workflows.optimizer import QAOA  
 q = QAOA()
-q.compile(pubo_problem)
+q.compile(qubo_problem)
 q.optimize() 
 ```
 
@@ -103,7 +104,7 @@ q_custom.set_circuit_properties(p=10, param_type='extended', init_type='ramp', m
 q_custom.set_device(device)
 q_custom.set_backend_properties(n_shot=200, cvar_alpha=1)
 q_custom.set_classical_optimizer(method='nelder-mead', maxiter=2)
-q_custom.compile(pubo_problem)
+q_custom.compile(qubo_problem)
 q_custom.optimize()
 ```
 
@@ -119,6 +120,8 @@ With the notation `nq-qvm` it is intended that `n` is a positive integer. For ex
 
 The `vectorised` backend is developed by Entropica Labs and works by targeting active qubits (on which gates are to be applied in any given Hamiltonian term) by using the numpy slicing operators, and applying the gate operations in place. This allows the operators and their action on the wavefunction to be constructed and performed in a simple and fast way.
 
+Note that in order to use the Rigetti devices you either need to be running your code on Rigetti's [Quantum Cloud Services](https://qcs.rigetti.com/sign-in) or, in case you want to run it locally from your machine, start qvm and quilc. More information on how to start them can be found in https://docs.rigetti.com/qcs/getting-started.
+
 #### Recursive QAOA
 
 A more cohmprensive notebook is [RQAOA_example](examples/RQAOA_example.ipynb)
@@ -127,7 +130,7 @@ A more cohmprensive notebook is [RQAOA_example](examples/RQAOA_example.ipynb)
 from openqaoa.workflows.optimizer import RQAOA
 r = RQAOA(rqaoa_type='adaptive')
 r.set_rqaoa_parameters(n_max=5, n_cutoff = 5)
-r.compile(pubo_problem)
+r.compile(qubo_problem)
 r.optimize()
 ```
 
