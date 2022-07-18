@@ -707,7 +707,7 @@ def sort_counts_increasing_energy(hamiltonian: Hamiltonian,counts:dict) -> dict:
     return sorted_dict
 
 
-def plot_counts(counts:dict,show_xticks:bool=True,ax=None):
+def plot_counts(counts:dict,show_xticks:bool=True,ax=None,color='blue'):
     """
     Plot a histogram graph for the measurement outcomes vs their probabilities
     
@@ -719,7 +719,7 @@ def plot_counts(counts:dict,show_xticks:bool=True,ax=None):
     if ax is None:
         fig,ax = plt.subplots(1,1,figsize=(25,5))
         
-    ax.bar(counts.keys(),counts.values(),align='center',width=0.3)
+    ax.bar(counts.keys(),counts.values(),align='center',width=0.3,color=color)
     ax.tick_params(axis='x',labelrotation = 80)
     ax.set_title('Probability distribution in increasing order of energies')
     if not show_xticks:
@@ -824,7 +824,7 @@ def low_energy_states_overlap(hamiltonian: Hamiltonian,
     _, states = low_energy_states(hamiltonian, threshold_per)
 
     # Compute overlap
-    total_overlap = sum([prob_dict[state]
+    total_overlap = sum([prob_dict.get(state,0)
                         for state in states])/sum(list(prob_dict.values()))
 
     return total_overlap
