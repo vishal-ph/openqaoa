@@ -16,37 +16,54 @@ from typing import Tuple, List, Union
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-from sympy import gammasimp
+from sklearn.cluster import KMeans
 
 from openqaoa.qaoa_parameters.operators import Hamiltonian
 from .baseparams import QAOACircuitParams, QAOAVariationalBaseParams, shapedArray, _is_iterable_empty
 
 
 def hamiltonian_clustering(qaoa_circuit_params: QAOACircuitParams,
-						   max_std_dev: float):
+                           max_std_dev: float,
+                           n_clusters: int):
 
-	cost_hamiltonian = qaoa_circuit_params.cost_hamiltonian
-	coeffs = cost_hamiltonian.coeffs
-	terms = cost_hamiltonian.terms
-	sorted_terms,sorted_coeffs = zip(*sorted(zip(terms,coeffs), key = lambda pair: pair[1]))
-	
-	sorted_terms = list(sorted_terms)
-	sorted_coeffs = list(sorted_coeffs)
+    if n_clusters > 0 :
+        print('Using k-means')
+        cost_hamiltonian = qaoa_circuit_params.cost_hamiltonian
+        coeffs = cost_hamiltonian.coeffs
+        terms = cost_hamiltonian.terms
+        sorted_terms,sorted_coeffs = zip(*sorted(zip(terms,coeffs), key = lambda pair: pair[1]))
 
-	clusters=[]
-	new_cluster_terms = []
-	new_cluster_coeffs = []
-	for term,coeff in zip(sorted_terms,sorted_coeffs):	
-		new_cluster_terms.append(term)
-		new_cluster_coeffs.append(coeff)
-		current_std_dev = np.std(new_cluster_coeffs)
-		if current_std_dev >= max_std_dev:
-			clusters.append(Hamiltonian(new_cluster_terms,new_cluster_coeffs,0,remap_logical_qubits=False))
-			new_cluster_terms = []
-			new_cluster_coeffs = []
-	clusters.append(Hamiltonian(new_cluster_terms,new_cluster_coeffs,0,remap_logical_qubits=False))	
+        X = np.array(sorted(np.array(sorted_coeffs).reshape(-1, 1)))
+        kmeans = KMeans(n_clusters=n_clusters).fit(X)
 
-	return clusters
+        clusters = []
+        for l in range(len(set(kmeans.labels_))):
+            clusters.append(Hamiltonian(np.array(sorted_terms)[kmeans.labels_==l],X[kmeans.labels_==l],0,remap_logical_qubits=False))
+
+    else:
+        print('Using the sharma parametrisation')
+        cost_hamiltonian = qaoa_circuit_params.cost_hamiltonian
+        coeffs = cost_hamiltonian.coeffs
+        terms = cost_hamiltonian.terms
+        sorted_terms,sorted_coeffs = zip(*sorted(zip(terms,coeffs), key = lambda pair: pair[1]))
+
+        sorted_terms = list(sorted_terms)
+        sorted_coeffs = list(sorted_coeffs)
+
+        clusters=[]
+        new_cluster_terms = []
+        new_cluster_coeffs = []
+        for term,coeff in zip(sorted_terms,sorted_coeffs):	
+            new_cluster_terms.append(term)
+            new_cluster_coeffs.append(coeff)
+            current_std_dev = np.std(new_cluster_coeffs)
+            if current_std_dev >= max_std_dev:
+                clusters.append(Hamiltonian(new_cluster_terms,new_cluster_coeffs,0,remap_logical_qubits=False))
+                new_cluster_terms = []
+                new_cluster_coeffs = []
+        clusters.append(Hamiltonian(new_cluster_terms,new_cluster_coeffs,0,remap_logical_qubits=False))	
+    
+    return clusters
 
 
 class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
@@ -93,19 +110,21 @@ class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
 	def __init__(self,
 				 qaoa_circuit_params: QAOACircuitParams,
 				 max_std_dev: float,
+                 n_clusters: int,
 				 betas: List[Union[float, int]],
-				 gammas: List[Union[float, int]]):
+				 gammas: List[Union[float, int]]):   
 
 		# setup reg, qubits_singles and qubits_pairs
 		super().__init__(qaoa_circuit_params)
 		self.max_std_dev = max_std_dev
-		self.hamiltonian_clusters = hamiltonian_clustering(self.qaoa_circuit_params, self.max_std_dev)
+		self.n_clusters = n_clusters
+		self.hamiltonian_clusters = hamiltonian_clustering(self.qaoa_circuit_params, self.max_std_dev, self.n_clusters)
 		# and add the parameters
 		self.betas = betas
 		self.gammas = gammas
 		self.cost_1q_terms = self.qaoa_circuit_params.cost_hamiltonian.qubits_singles
 		self.cost_2q_terms = self.qaoa_circuit_params.cost_hamiltonian.qubits_pairs
-		
+
 		assert self.gammas.shape == (self.p, len(self.hamiltonian_clusters)), f'Please specify ,\
 									{(self.p,len(self.hamiltonian_clusters))} unique gammas'
 
@@ -182,6 +201,7 @@ class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
 	def linear_ramp_from_hamiltonian(cls,
 									 qaoa_circuit_params:QAOACircuitParams,
 									 max_std_dev: float,
+									 n_clusters: int = 0,
 									 time: float = None):
 		"""
 
@@ -202,7 +222,7 @@ class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
 
 		dt = time / p
 
-		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev)
+		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev, n_clusters)
 		n_gammas = len(hamiltonian_clusters)
 		betas = np.linspace((dt / time) * (time * (1 - 0.5 / p)),
 							(dt / time) * (time * 0.5 / p), p)
@@ -210,11 +230,11 @@ class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
 		gammas = gammas.repeat(n_gammas).reshape(p, n_gammas)
 
 		# wrap it all nicely in a qaoa_parameters object
-		params = cls(qaoa_circuit_params, max_std_dev, betas, gammas)
+		params = cls(qaoa_circuit_params, max_std_dev, n_clusters, betas, gammas)
 		return params
 	
 	@classmethod
-	def random(cls,qaoa_circuit_params:QAOACircuitParams,max_std_dev:float,seed:int = None):
+	def random(cls,qaoa_circuit_params:QAOACircuitParams,max_std_dev:float,n_clusters:int=0,seed:int = None):
 		"""
 		Returns
 		-------
@@ -225,22 +245,22 @@ class QAOAVariationalClusteredParams(QAOAVariationalBaseParams):
 			np.random.seed(seed)
 			
 		p = qaoa_circuit_params.p
-		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev)
+		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev, n_clusters)
 		n_gammas = len(hamiltonian_clusters)
 		betas = np.random.uniform(0,np.pi,p)
 		gammas = np.random.uniform(0,np.pi,(p,n_gammas))
 
-		params = cls(qaoa_circuit_params, max_std_dev, betas, gammas)
+		params = cls(qaoa_circuit_params, max_std_dev, n_clusters, betas, gammas)
 		return params
 
 	@classmethod
-	def empty(cls, qaoa_circuit_params:QAOACircuitParams,max_std_dev: float):
+	def empty(cls, qaoa_circuit_params:QAOACircuitParams,max_std_dev: float, n_clusters:int):
 
 		p = qaoa_circuit_params.p
-		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev)
+		hamiltonian_clusters = hamiltonian_clustering(qaoa_circuit_params, max_std_dev, n_clusters)
 		betas = np.empty(p)
 		gammas = np.empty(p, len(hamiltonian_clusters))
-		return cls(qaoa_circuit_params, max_std_dev, betas, gammas)
+		return cls(qaoa_circuit_params, max_std_dev, n_clusters, betas, gammas)
 
 	def get_constraints(self):
 		"""Constraints on the parameters for constrained parameters.

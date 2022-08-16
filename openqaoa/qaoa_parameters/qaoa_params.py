@@ -71,7 +71,8 @@ def _qaoa_variational_params_args(params_type: str,
                                                           np.ndarray]] = None,
                                   total_annealing_time: Optional[float] = None,
                                   schedule: Union[List, np.ndarray] = None,
-                                  max_std_dev: Optional[float] = None) -> Tuple[Union[List, np.ndarray]]:
+                                  max_std_dev: Optional[float] = None,
+								  n_clusters: Optional[int]= None) -> Tuple[Union[List, np.ndarray]]:
     """
     Provided the given parameterisation type return the 
     variational parameters arguments as a tuple
@@ -109,7 +110,7 @@ def _qaoa_variational_params_args(params_type: str,
                                  'fourier_extended': (q, v_singles, v_pairs, u_singles, u_pairs),
                                  'fourier_w_bias': (q, v, u_singles, u_pairs),
                                  'annealing': (total_annealing_time, schedule),
-                                 'clustered': (max_std_dev, betas, gammas)
+                                 'clustered': (max_std_dev, n_clusters, betas, gammas)
                                  }
     final_variational_params = VARIATIONAL_PARAMS_MAPPER[params_type.lower()]
     if init_type != 'custom':
@@ -127,6 +128,7 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
                                    q: Optional[int] = None,
                                    total_annealing_time: Optional[float] = None,
                                    max_std_dev: Optional[float] = None,
+                                   n_clusters: Optional[int] = 0,
                                    seed: int = None) -> QAOAVariationalBaseParams:
     """
     Create QAOA Variational Parameters of the specified type.
@@ -162,6 +164,7 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
                                                             q=q,
                                                             total_annealing_time = total_annealing_time,
                                                             max_std_dev = max_std_dev,
+															n_clusters=n_clusters,
                                                             **variational_params_dict)
 
     try:
@@ -180,11 +183,11 @@ def create_qaoa_variational_params(qaoa_circuit_params: QAOACircuitParams,
     elif init_type == 'ramp':
         qaoa_variational_params = params_class.linear_ramp_from_hamiltonian(qaoa_circuit_params,
                                                                             *variational_params_args,
-                                                                            linear_ramp_time)
+                                                                            time=linear_ramp_time)
     elif init_type == 'rand':
         qaoa_variational_params = params_class.random(qaoa_circuit_params,
                                                       *variational_params_args,
-                                                      seed)
+                                                      seed=seed)
     else:
         raise ValueError(f"{init_type} Initialisation strategy is not yet supported."
                          f" Please choose from {SUPPORTED_INITIALIZATION_TYPES}")
